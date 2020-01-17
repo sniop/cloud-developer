@@ -11,6 +11,7 @@ import { Car, cars as cars_list } from './cars';
   //default port to listen
   const port = 8082; 
   
+  //note: node uses middlewhere desing pattern , allows us to inject specific function into the steam of request process
   //use middleware so post bodies 
   //are accessable as req.body.{{variable}}
   app.use(bodyParser.json()); 
@@ -83,7 +84,7 @@ import { Car, cars as cars_list } from './cars';
               .send(cars_list);
   } );
 
-  // @TODO Add an endpoint to get a specific car
+  // @TODO : DONE: Add an endpoint to get a specific car
   // it should require id
   // it should fail gracefully if no matching car is found
   app.get( "/cars/:carId", 
@@ -96,7 +97,7 @@ import { Car, cars as cars_list } from './cars';
                 .send(selectedCar);
   } );
 
-  /// @TODO Add an endpoint to post a new car to our list
+  /// @TODO :DONE: Add an endpoint to post a new car to our list
   // it should require id, type, model, and cost
   app.post( "/cars", 
     async ( req: Request, res: Response ) => {
