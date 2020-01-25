@@ -1,6 +1,8 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import Jimp = require('jimp');
+import fs = require('fs');
 
 (async () => {
 
@@ -17,7 +19,6 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   // GET /filteredimage?image_url={{URL}}
   // endpoint to filter an image from a public url.
   // IT SHOULD
-  //    1
   //    1. validate the image_url query
   //    2. call filterImageFromURL(image_url) to filter the image
   //    3. send the resulting file in the response
@@ -28,8 +29,29 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
-
+//sample
+// http://localhost:8082/filteredimage?image_url=https://tineye.com/images/widgets/mona.jpg
   //! END @TODO1
+
+  app.get('/filteredimage', async (req, res) => {
+    let imageUrl = req.query.image_url;
+    console.log("imageUrl="+imageUrl);
+    console.log(req.query);
+    console.log(req.query.image_url);
+    if (!imageUrl) {
+        return res.status(400).send({ message: 'image_url is empty or malformed' });
+    }
+    const filteredImageLocation = await filterImageFromURL(imageUrl);
+    res.sendFile(filteredImageLocation,function(err){
+      if(!err){
+        console.log("deleting filtered-image="+filteredImageLocation);
+        deleteLocalFiles([filteredImageLocation]);
+      }
+    });
+  });
+
+
+
   
   // Root Endpoint
   // Displays a simple message to the user
