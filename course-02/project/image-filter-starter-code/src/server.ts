@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import {filterImageFromURL, deleteLocalFiles,requireAuth} from './util/util';
 import Jimp = require('jimp');
 import fs = require('fs');
 
@@ -15,7 +15,7 @@ import fs = require('fs');
   // Use the body parser middleware for post requests
   app.use(bodyParser.json());
 
-  // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
+  // @DONE IMPLEMENT A RESTFUL ENDPOINT
   // GET /filteredimage?image_url={{URL}}
   // endpoint to filter an image from a public url.
   // IT SHOULD
@@ -31,9 +31,9 @@ import fs = require('fs');
   /**************************************************************************** */
 //sample
 // http://localhost:8082/filteredimage?image_url=https://tineye.com/images/widgets/mona.jpg
-  //! END @TODO1
+  //! END @DONE
 
-  app.get('/filteredimage', async (req, res) => {
+  app.get('/filteredimage', requireAuth,  async (req, res) => {
     let imageUrl = req.query.image_url;
     console.log("imageUrl="+imageUrl);
     console.log(req.query);
@@ -44,7 +44,7 @@ import fs = require('fs');
     const filteredImageLocation = await filterImageFromURL(imageUrl);
     res.sendFile(filteredImageLocation,function(err){
       if(!err){
-        console.log("deleting filtered-image="+filteredImageLocation);
+        console.log("deleting filtered-image");
         deleteLocalFiles([filteredImageLocation]);
       }
     });
