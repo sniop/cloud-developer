@@ -1,4 +1,4 @@
-import { SNSEvent, SNSHandler } from 'aws-lambda'
+import { SNSEvent, SNSHandler,S3EventRecord } from 'aws-lambda'
 import 'source-map-support/register'
 import * as AWS from 'aws-sdk'
 import Jimp from 'jimp/es'
@@ -9,4 +9,43 @@ const imagesBucketName = process.env.IMAGES_S3_BUCKET
 const thumbnailBucketName = process.env.THUMBNAILS_S3_BUCKET
 
 export const handler: SNSHandler = async (event: SNSEvent) => {
-}
+    console.log('Processing SNS event ', JSON.stringify(event))
+    for (const snsRecord of event.Records) {
+      const s3EventStr = snsRecord.Sns.Message
+      console.log('Processing S3 event', s3EventStr)
+      const s3Event = JSON.parse(s3EventStr)
+  
+      for (const record of s3Event.Records) {
+        // "record" is an instance of S3EventRecord
+        await processImage(record) // A function that should resize each image
+      }
+    }
+  }
+
+  async function processImage(record: S3EventRecord){
+    const key = record.s3.object.key//get key of uploaded image in s3
+
+    //download an image
+    const response = await s3.getObject({
+        Bucket: imagesBucketName,
+        Key: key
+    }).promise()
+
+    //read an image with the Jimp library
+    const image = await Jimp.read(response.Body)
+
+    //resize an image, maintaining image's width and height ratio
+    image.resize(150,Jimp.AUTO)
+
+    //Convert an image to a buffer that we can write to a different bucket
+    const convertedImageBuffer = await image.getBufferAsync(Jimp.AUTO)
+
+    //write image to a different S3 bucket
+
+    await s3.putObject({
+        Bucket: thumbnailBucketName,
+        Key: '${key}.jpeg',
+        Body: convertedImageBuffer
+    }).promise()
+
+  }
