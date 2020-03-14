@@ -35,3 +35,9 @@ UserInterfaceState.xcuserstate
 node_modules
 venv/
 .vscode
+# Serverless directories
+.serverless
+.dynamodb
+# Webpack directories
+.webpack
+build
