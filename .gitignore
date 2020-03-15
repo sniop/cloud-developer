@@ -41,3 +41,5 @@ venv/
 # Webpack directories
 .webpack
 build
+
+http-metrics.zip
