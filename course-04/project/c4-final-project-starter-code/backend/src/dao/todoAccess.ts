@@ -1,11 +1,14 @@
 import * as AWS  from 'aws-sdk'
-import * as AWSXRay from 'aws-xray-sdk'
+//import * as AWSXRay from 'aws-xray-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
-
-const XAWS = AWSXRay.captureAWS(AWS)
-
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
+import { createLogger } from '../utils/logger'
+
+const AWSXRay = require('aws-xray-sdk')
+const XAWS = AWSXRay.captureAWS(AWS)
+
+const logger = createLogger('todoAccess')
 
 export class TodoAccess {
 
@@ -22,7 +25,7 @@ export class TodoAccess {
     const todosData = await this.docClient.query({
       TableName: this.todosTable,
       IndexName: this.userIdIndex,
-      KeyConditionExpression:'userId= :userId',
+      KeyConditionExpression:'userId = :userId',
       ExpressionAttributeValues: {
         ':userId': userId
       }
@@ -52,6 +55,13 @@ export class TodoAccess {
         ':name': todoUpdateItem.name,
         ':dueDate': todoUpdateItem.dueDate,
         ':done': todoUpdateItem.done
+      }
+    },
+    function(err,data){
+      if(err){
+        logger.error("failed to update todo",{'err':err});
+      }else{
+        logger.error("update successful",{'data':data});
       }
     }).promise()
   }

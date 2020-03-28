@@ -18,10 +18,11 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   const items = getTodosForUser(userId)
 
+  //TODO-ABS use middy instead
   return {
     statusCode: 200,
-    headers:{
-      'Access-Control-Allow-Origin': '*'//TODO-ABS use middy instead
+    headers: {
+      'Access-Control-Allow-Origin': '*'
     },
     body:JSON.stringify({
       items

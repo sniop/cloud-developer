@@ -1,11 +1,11 @@
 import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
 import 'source-map-support/register'
 
-import { verify, decode } from 'jsonwebtoken'
+import { verify } from 'jsonwebtoken'
 import { createLogger } from '../../utils/logger'
-import Axios from 'axios'
 import { JwtPayload } from '../../auth/JwtPayload'
 
+const axios = require('axios').default;
 const logger = createLogger('auth')
 
 // DONE: Provide a URL that can be used to download a certificate that can be used
@@ -15,34 +15,49 @@ const jwksUrl = 'https://dev-x8u69k6f.eu.auth0.com/.well-known/jwks.json'
 
 export const handler = async (event: CustomAuthorizerEvent
 ): Promise<CustomAuthorizerResult> => {
-  logger.info('Authorizing a user', event.authorizationToken)
+  logger.info('Authorizing a user', {'authHeader':event.authorizationToken})
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
-    logger.info('User was authorized, with token=', jwtToken)
+    logger.info('User was authorized', {'jwtToken':jwtToken})
 
-    return createAuthorizationResult(jwtToken.sub,'Allow')
+    return createAuthorizationResult(jwtToken.sub, 'Allow')
 
   } catch (e) {
     logger.error('User not authorized', { error: e.message })
 
-    return createAuthorizationResult('user','Deny')
+    return createAuthorizationResult('user', 'Deny')
   }
 }
 
 async function verifyToken(authHeader: string): Promise<JwtPayload> {
-  let certText;
-  Axios.get(jwksUrl)
-    .then(response => {
-      certText = response.x5c
-    }).catch(error => logger.error('failed to fetch cert from AUTH0-JWKS service', { error: error }))
 
+  const publicKey = await getPublicKeyFromJwksService();
   const token = getToken(authHeader)
   // const jwt: Jwt = decode(token, { complete: true }) as Jwt
 
   // DONE: Implement token verification
   // You should implement it similarly to how it was implemented for the exercise for the lesson 5
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
-  return verify(token, certText, { algorithms: ['RS256'] }) as JwtPayload
+  return verify(token, publicKey, { algorithms: ['RS256'] }) as JwtPayload
+}
+
+async function getPublicKeyFromJwksService(): Promise<string>{
+  try{
+    const jwksResponse = await axios.get(jwksUrl)
+    const x5cCert = jwksResponse.data.keys[0].x5c[0]
+    logger.info("x5c extracted from jwks",{'x5c':x5cCert})
+    return base64ToPem(x5cCert)
+  }catch(error){
+    logger.error('failed to fetch cert from AUTH0-JWKS service', { error: error })
+  }
+}
+
+function base64ToPem(base64EncodedCert:string): string{
+  const prefix=`-----BEGIN CERTIFICATE-----\n`
+  const suffix=`\n-----END CERTIFICATE-----`
+  const pemCert = prefix+base64EncodedCert+suffix
+  logger.info("converting to pem",{'pemCert':pemCert})
+  return pemCert
 }
 
 function getToken(authHeader: string): string {
@@ -57,7 +72,7 @@ function getToken(authHeader: string): string {
   return token
 }
 
-async function createAuthorizationResult(principalId: string ,effect: string): Promise<CustomAuthorizerResult> {
+async function createAuthorizationResult(principalId: string, effect: string): Promise<CustomAuthorizerResult> {
   return {
     principalId: principalId,
     policyDocument: {

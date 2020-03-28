@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { parseUserId } from "../auth/utils";
-import { createLogger } from '../../utils/logger'
+import { createLogger } from '../utils/logger'
 
 const logger = createLogger('utils')
 /**

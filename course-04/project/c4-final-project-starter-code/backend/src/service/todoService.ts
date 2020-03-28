@@ -30,8 +30,8 @@ export async function createTodo(
 
 export async function updateTodo(
     todoId: string,
-    updateTodoRequest: UpdateTodoRequest,
-    userId: string)
+    userId: string,
+    updateTodoRequest: UpdateTodoRequest)
     {
   
         await todoAccess.updateTodo(
