@@ -4,6 +4,10 @@ service:
 plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
+  - serverless-reqvalidator-plugin
+  - serverless-aws-documentation
+  - serverless-dynamodb-local
+  - serverless-offline
 
 provider:
   name: aws
@@ -12,14 +16,28 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-2'}
 
+  tracing:
+    lambda: true
+    apiGateway: true
+
   environment:
     TODOS_TABLE: Todos-${self:provider.stage}
-    USER_ID_INDEX: UsedIdIndex
     TODOS_S3_BUCKET: serverless-udacity-sharmaa-todo-${self:provider.stage}
     SIGNED_URL_EXPIRATION_IN_SECONDS: 250
 
 
 custom:
+  serverless-offline:
+    port: 3003
+
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+    stages:
+      - dev
+
   documentation:
     api:
       info:
@@ -27,11 +45,9 @@ custom:
         title: TODO api
         description: tracks user's TODO list
     models:
-        #TODO-ABS test create-todo-request validator
       - name: CreateTodoRequest
         contentType: application/json
         schema: ${file(models/create-todo-request.json)}
-        #TODO-ABS test update-todo-request validator
       - name: UpdateTodoRequest
         contentType: application/json
         schema: ${file(models/update-todo-request.json)}
@@ -57,8 +73,10 @@ functions:
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
       - Effect: Allow
         Action:
-          - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.USER_ID_INDEX}
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - '*'
 
   # DONE: Configure this function
   CreateTodo:
@@ -80,6 +98,12 @@ functions:
         Action:
           - dynamodb:PutItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - '*'
 
   # DONE: Configure this function
   UpdateTodo:
@@ -101,6 +125,12 @@ functions:
         Action:
           - dynamodb:UpdateItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - '*'
 
   #DONE: Configure this function
   DeleteTodo:
@@ -116,6 +146,12 @@ functions:
         Action:
           - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - '*'
 
 
   #DONE : Configure this function
@@ -133,6 +169,11 @@ functions:
           - s3:PutObject
           - s3:GetObject
         Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+        Resource:
+          - '*'
 
 resources:
   Resources:
@@ -163,26 +204,16 @@ resources:
         AttributeDefinitions:
           - AttributeName: todoId
             AttributeType: S
-          - AttributeName: createdAt
-            AttributeType: S
           - AttributeName: userId
             AttributeType: S
         KeySchema:
-          - AttributeName: todoId
+          - AttributeName: userId
             KeyType: HASH
-          - AttributeName: createdAt
+          - AttributeName: todoId
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.TODOS_TABLE}
-        LocalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.USER_ID_INDEX}
-            KeySchema:
-            - AttributeName: todoId
-              KeyType: HASH
-            - AttributeName: userId
-              KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
+
     
     # s3 bucket resource
     AttachmentsBucket:
