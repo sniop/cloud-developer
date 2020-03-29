@@ -8,7 +8,7 @@ import * as uuid from 'uuid'
 const todoAccess = new TodoAccess()
 
 export async function getTodosForUser(userId: string): Promise<TodoItem[]>{
-    return todoAccess.getTodosForUser(userId);
+    return await todoAccess.getTodosForUser(userId);
 }
 
 export async function createTodo(
@@ -16,14 +16,15 @@ export async function createTodo(
     userId: string): Promise<TodoItem> {
 
     const todoId = uuid.v4()
+    const createdAt = new Date().toISOString()
 
     return await todoAccess.createTodo({
         userId: userId,
         todoId: todoId,
-        createdAt: createTodoRequest.createdAt,
+        createdAt: createdAt,
         name: createTodoRequest.name,
         dueDate: createTodoRequest.dueDate,
-        done: createTodoRequest.done,
+        done: false,
         attachmentUrl: createTodoRequest.attachmentUrl
     })
 }
@@ -46,6 +47,6 @@ export async function updateTodo(
     }
 
 
-export async function deleteTodo(todoId:string){
-    todoAccess.deleteTodo(todoId)
+export async function deleteTodo(userId:string,todoId:string){
+    await todoAccess.deleteTodo(userId,todoId)
 }

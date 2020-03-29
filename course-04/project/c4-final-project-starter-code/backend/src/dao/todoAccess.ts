@@ -1,5 +1,4 @@
 import * as AWS  from 'aws-sdk'
-//import * as AWSXRay from 'aws-xray-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
@@ -14,24 +13,29 @@ export class TodoAccess {
 
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
-    private readonly todosTable = process.env.TODOS_TABLE,
-    private readonly userIdIndex = process.env.USER_ID_INDEX
-    
+    private readonly todosTable = process.env.TODOS_TABLE    
     ) {
   }
 
   async getTodosForUser(userId: string): Promise<TodoItem[]>{
-    
-    const todosData = await this.docClient.query({
+    logger.info('get TODO',{'userId':userId,'todosTable':this.todosTable});
+    const queryParams = {
       TableName: this.todosTable,
-      IndexName: this.userIdIndex,
-      KeyConditionExpression:'userId = :userId',
+      KeyConditionExpression: 'userId = :userId',
       ExpressionAttributeValues: {
         ':userId': userId
       }
-    }).promise()
+    }
+    const todosData = await this.docClient.query(queryParams,
+        function(err,data){
+          if(err){
+            logger.error('failed to query todo',{'err':err});
+          }else{
+            logger.info('query successful',{'data':data});
+          }
+        }).promise()
 
-    return todosData.Items as TodoItem[]
+      return todosData.Items as TodoItem[]
   }
 
   async createTodo(todoItem: TodoItem): Promise<TodoItem> {
@@ -44,13 +48,17 @@ export class TodoAccess {
   }
 
   async updateTodo(todoId:string, userId:string, todoUpdateItem: TodoUpdate) {
+    logger.info('updating TODO',{'todoId':todoId,'userId':userId,'todoUpdateItem':todoUpdateItem});
     await this.docClient.update({
       TableName: this.todosTable,
       Key:{
         'userId': userId,
         'todoId': todoId
       },
-      UpdateExpression: 'set name= :name, dueDate= :dueDate, done= :done',
+      UpdateExpression: 'set #name= :name, dueDate= :dueDate, done= :done',
+      ExpressionAttributeNames:{
+        '#name':'name'
+      },
       ExpressionAttributeValues:{
         ':name': todoUpdateItem.name,
         ':dueDate': todoUpdateItem.dueDate,
@@ -59,23 +67,38 @@ export class TodoAccess {
     },
     function(err,data){
       if(err){
-        logger.error("failed to update todo",{'err':err});
+        logger.error('failed to update todo',{'err':err});
       }else{
-        logger.error("update successful",{'data':data});
+        logger.info('update successful',{'data':data});
       }
     }).promise()
   }
 
-  async deleteTodo(todoId: string){
+  async deleteTodo(userId:string,todoId: string){
     await this.docClient.delete({
       TableName: this.todosTable,
       Key: {
-        'todoId':todoId
+        'todoId':todoId,
+        'userId':userId
+      }
+    },
+    function(err,data){
+      if(err){
+        logger.error('failed to delete todo',{'err':err});
+      }else{
+        logger.info('delete successful',{'data':data});
       }
     })
   }
 }
 
 function createDynamoDBClient() {
+  if (process.env.IS_OFFLINE) {
+    console.log('Creating a local DynamoDB instance')
+    return new XAWS.DynamoDB.DocumentClient({
+      region: 'localhost',
+      endpoint: 'http://localhost:8000'
+    })
+  }
   return new XAWS.DynamoDB.DocumentClient()
 }

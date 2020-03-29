@@ -23,7 +23,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   logger.info("user id extracted from token",{'userId':userId})
 
-  updateTodo(todoId, userId,updatedTodo)
+  await updateTodo(todoId, userId,updatedTodo)
 
   return {
     statusCode: 200,

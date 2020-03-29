@@ -11,12 +11,11 @@ const logger = createLogger('getTodos')
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   // DONE: Get all TODO items for a current user
-  logger.debug("event processed",event)
-
   const userId = getUserId(event)
   
+  logger.info("fetch TODO details",{'userId':userId})
 
-  const items = getTodosForUser(userId)
+  const items = await getTodosForUser(userId)
 
   //TODO-ABS use middy instead
   return {
