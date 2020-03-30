@@ -4,10 +4,21 @@ import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 import { TodoItem } from '../models/TodoItem'
 import * as uuid from 'uuid'
+import { createLogger } from '../utils/logger'
+import * as AWS  from 'aws-sdk'
+import * as AWSXRay from 'aws-xray-sdk'
+
+const logger = createLogger('todoService')
 
 const todoAccess = new TodoAccess()
 const bucketName = process.env.TODOS_S3_BUCKET
+const urlExpirationInSeconds = parseInt(process.env.SIGNED_URL_EXPIRATION_IN_SECONDS)
 
+const XAWS = AWSXRay.captureAWS(AWS)
+const s3 = new XAWS.S3({
+    signatureVersion: 'v4'
+  })
+  
 export async function getTodosForUser(userId: string): Promise<TodoItem[]> {
     return await todoAccess.getTodosForUser(userId);
 }
@@ -51,3 +62,13 @@ export async function updateTodo(
 export async function deleteTodo(userId: string, todoId: string) {
     await todoAccess.deleteTodo(userId, todoId)
 }
+
+export function createPreSignedUrlForUpload(todoId: string) {
+    logger.info("creating presigned URL")
+    return s3.getSignedUrl('putObject', {
+      Bucket: bucketName,
+      Key: todoId,
+      Expires: urlExpirationInSeconds
+    })
+  }
+  
