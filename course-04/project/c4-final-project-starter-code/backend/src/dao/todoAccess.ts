@@ -1,4 +1,4 @@
-import * as AWS  from 'aws-sdk'
+import * as AWS from 'aws-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
@@ -13,12 +13,12 @@ export class TodoAccess {
 
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
-    private readonly todosTable = process.env.TODOS_TABLE    
-    ) {
+    private readonly todosTable = process.env.TODOS_TABLE
+  ) {
   }
 
-  async getTodosForUser(userId: string): Promise<TodoItem[]>{
-    logger.info('get TODO',{'userId':userId,'todosTable':this.todosTable});
+  async getTodosForUser(userId: string): Promise<TodoItem[]> {
+    logger.info('get TODO', { 'userId': userId, 'todosTable': this.todosTable });
     const queryParams = {
       TableName: this.todosTable,
       KeyConditionExpression: 'userId = :userId',
@@ -27,15 +27,15 @@ export class TodoAccess {
       }
     }
     const todosData = await this.docClient.query(queryParams,
-        function(err,data){
-          if(err){
-            logger.error('failed to query todo',{'err':err});
-          }else{
-            logger.info('query successful',{'data':data});
-          }
-        }).promise()
+      function (err, data) {
+        if (err) {
+          logger.error('failed to query todo', { 'err': err });
+        } else {
+          logger.info('query successful', { 'data': data });
+        }
+      }).promise()
 
-      return todosData.Items as TodoItem[]
+    return todosData.Items as TodoItem[]
   }
 
   async createTodo(todoItem: TodoItem): Promise<TodoItem> {
@@ -47,48 +47,50 @@ export class TodoAccess {
     return todoItem
   }
 
-  async updateTodo(todoId:string, userId:string, todoUpdateItem: TodoUpdate) {
-    logger.info('updating TODO',{'todoId':todoId,'userId':userId,'todoUpdateItem':todoUpdateItem});
+  async updateTodo(todoId: string, userId: string, todoUpdateItem: TodoUpdate) {
+    logger.info('updating TODO', { 'todoId': todoId, 'userId': userId, 'todoUpdateItem': todoUpdateItem });
     await this.docClient.update({
       TableName: this.todosTable,
-      Key:{
+      Key: {
         'userId': userId,
         'todoId': todoId
       },
       UpdateExpression: 'set #name= :name, dueDate= :dueDate, done= :done',
-      ExpressionAttributeNames:{
-        '#name':'name'
+      ExpressionAttributeNames: {
+        '#name': 'name'
       },
-      ExpressionAttributeValues:{
+      ExpressionAttributeValues: {
         ':name': todoUpdateItem.name,
         ':dueDate': todoUpdateItem.dueDate,
         ':done': todoUpdateItem.done
       }
     },
-    function(err,data){
-      if(err){
-        logger.error('failed to update todo',{'err':err});
-      }else{
-        logger.info('update successful',{'data':data});
-      }
-    }).promise()
+      function (err, data) {
+        if (err) {
+          logger.error('failed to update todo', { 'err': err });
+        } else {
+          logger.info('update successful', { 'data': data });
+        }
+      }).promise()
   }
 
-  async deleteTodo(userId:string,todoId: string){
+  async deleteTodo(userId: string, todoId: string) {
+    logger.info("calling delete todo ", { "userId": userId, "todoId": todoId })
     await this.docClient.delete({
       TableName: this.todosTable,
       Key: {
-        'todoId':todoId,
-        'userId':userId
+        'todoId': todoId,
+        'userId': userId
       }
     },
-    function(err,data){
-      if(err){
-        logger.error('failed to delete todo',{'err':err});
-      }else{
-        logger.info('delete successful',{'data':data});
-      }
-    })
+      function (err, data) {
+        if (err) {
+          logger.error('failed to delete todo', { 'err': err });
+        } else {
+          logger.info('delete successful', { 'data': data });
+        }
+      }).promise()
+
   }
 }
 

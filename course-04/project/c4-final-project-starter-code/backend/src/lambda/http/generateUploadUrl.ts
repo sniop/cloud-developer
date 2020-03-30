@@ -12,22 +12,27 @@ const s3 = new XAWS.S3({
 })
 
 const bucketName = process.env.TODOS_S3_BUCKET
-const urlExpirationInSeconds = process.env.SIGNED_URL_EXPIRATION_IN_SECONDS
+const urlExpirationInSeconds = parseInt(process.env.SIGNED_URL_EXPIRATION_IN_SECONDS)
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   // DONE: Return a presigned URL to upload a file for a TODO item with the provided id
-  logger.debug("event processed",event)
   const todoId = event.pathParameters.todoId
-
+  const preSignedUrl = createPreSignedUrlForUpload(todoId);
+  logger.info("presigned URL created ",{"preSignedUrl":preSignedUrl})
   return {
     statusCode: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': true
+    },
     body: JSON.stringify({
-      uploadUrl: createPreSignedUrlForUpload(todoId)
+      uploadUrl: preSignedUrl
     })
   }
 }
 
 function createPreSignedUrlForUpload(todoId: string) {
+  logger.info("creating presigned URL")
   return s3.getSignedUrl('putObject', {
     Bucket: bucketName,
     Key: todoId,
