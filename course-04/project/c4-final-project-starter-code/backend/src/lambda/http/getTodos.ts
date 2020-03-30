@@ -17,7 +17,6 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   const items = await getTodosForUser(userId)
 
-  //TODO-ABS use middy instead
   return {
     statusCode: 200,
     headers: {
