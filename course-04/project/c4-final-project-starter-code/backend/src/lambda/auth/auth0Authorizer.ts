@@ -15,10 +15,10 @@ const jwksUrl = 'https://dev-x8u69k6f.eu.auth0.com/.well-known/jwks.json'
 
 export const handler = async (event: CustomAuthorizerEvent
 ): Promise<CustomAuthorizerResult> => {
-  logger.info('Authorizing a user', {'authHeader':event.authorizationToken})
+  logger.info('Authorizing a user')
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
-    logger.info('User was authorized', {'jwtToken':jwtToken})
+    logger.info('User was authorized')
 
     return createAuthorizationResult(jwtToken.sub, 'Allow')
 
