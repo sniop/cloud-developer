@@ -4,13 +4,12 @@ import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } f
 
 import { UpdateTodoRequest } from '../../requests/UpdateTodoRequest'
 import { updateTodo } from '../../service/todoService'
-import { getUserId } from '../utils'
+import { getUserId,corsHeadersAllowOriginAndCredential } from '../utils'
 import { createLogger } from '../../utils/logger'
 const logger = createLogger('createTodos')
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   // DONE: Update a TODO item with the provided id using values in the "updatedTodo" object
-  logger.info("processing update event",{'event':event})
   
   const todoId = event.pathParameters.todoId
   const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
@@ -27,10 +26,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   return {
     statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
+    headers: corsHeadersAllowOriginAndCredential(),
     body:''
   }
 }

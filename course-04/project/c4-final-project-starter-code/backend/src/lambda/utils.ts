@@ -17,3 +17,14 @@ export function getUserId(event: APIGatewayProxyEvent): string {
 
   return parseUserId(jwtToken)
 }
+
+export function corsHeadersAllowOriginAndCredential() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Credentials': true
+  }
+}
+
+export function corsHeadersAllowOrigin() {
+  return { 'Access-Control-Allow-Origin': '*' }
+}

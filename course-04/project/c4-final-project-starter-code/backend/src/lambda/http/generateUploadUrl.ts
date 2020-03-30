@@ -3,6 +3,7 @@ import 'source-map-support/register'
 import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
 import { createLogger } from '../../utils/logger'
 import { createPreSignedUrlForUpload } from '../../service/todoService'
+import { corsHeadersAllowOriginAndCredential } from '../utils'
 
 const logger = createLogger('createTodos')
 
@@ -13,13 +14,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   const preSignedUrl = createPreSignedUrlForUpload(todoId);
 
   logger.info("presigned URL created ",{"preSignedUrl":preSignedUrl})
-  
+
   return {
     statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
+    headers: corsHeadersAllowOriginAndCredential(),
     body: JSON.stringify({
       uploadUrl: preSignedUrl
     })

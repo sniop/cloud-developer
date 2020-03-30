@@ -3,7 +3,7 @@ import 'source-map-support/register'
 import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
 
 import { createLogger } from '../../utils/logger'
-import { getUserId } from '../utils'
+import { getUserId,corsHeadersAllowOrigin } from '../utils'
 import { getTodosForUser } from '../../service/todoService'
 
 const logger = createLogger('getTodos')
@@ -19,9 +19,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   return {
     statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    },
+    headers: corsHeadersAllowOrigin(),
     body:JSON.stringify({
       items
     })
