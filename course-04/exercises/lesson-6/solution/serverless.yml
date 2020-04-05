@@ -190,7 +190,7 @@ functions:
                 - ${self:custom.topicName}
           topicName: ${self:custom.topicName}
 
-  ResizeImage:
+  ResizeImage:    
     handler: src/lambda/s3/resizeImage.handler
     events:
       - sns:
@@ -299,6 +299,7 @@ resources:
         ValidateRequestBody: true
         ValidateRequestParameters: false
 
+    # create s3 resource
     AttachmentsBucket:
       Type: AWS::S3::Bucket
       DependsOn: SNSTopicPolicy
@@ -323,6 +324,7 @@ resources:
                 - HEAD
               MaxAge: 3000
 
+    # allow anyone to view images in our S3 bucket            
     BucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
